@@ -2,8 +2,8 @@
 import React from 'react';
 import { View, Dimensions, StyleSheet } from 'react-native';
 import { CartesianChart, Line, Area } from 'victory-native';
+import { Line as SkiaLine } from '@shopify/react-native-skia';
 import { CandleData } from '../types';
-import { formatCurrency } from '../utils/format';
 
 const { width } = Dimensions.get('window');
 
@@ -23,10 +23,6 @@ export function PriceChart({ data, ticker, targetPrice, stopLossPrice }: Props) 
   const minY = Math.min(...data.map((d) => d.close), stopLossPrice) * 0.98;
   const maxY = Math.max(...data.map((d) => d.close), targetPrice) * 1.02;
 
-  // Add reference lines for target and stop-loss
-  const targetData = data.map((_, i) => ({ day: i, value: targetPrice }));
-  const stopLossData = data.map((_, i) => ({ day: i, value: stopLossPrice }));
-
   return (
     <View style={[styles.container, { width: width - 32, height: 300 }]}>
       <CartesianChart
@@ -35,22 +31,46 @@ export function PriceChart({ data, ticker, targetPrice, stopLossPrice }: Props) 
         yKeys={['close']}
         domain={{ y: [minY, maxY] }}
       >
-        {({ points, chartBounds }) => (
-          <>
-            <Area
-              points={points.close}
-              y0={chartBounds.bottom}
-              color="rgba(91,155,213,0.08)"
-              animate={{ type: 'timing', duration: 300 }}
-            />
-            <Line
-              points={points.close}
-              color="#5b9bd5"
-              strokeWidth={2.5}
-              animate={{ type: 'timing', duration: 300 }}
-            />
-          </>
-        )}
+        {({ points, chartBounds }) => {
+          const domainHeight = maxY - minY;
+          const chartHeight = chartBounds.bottom - chartBounds.top;
+          // 가격 → Y픽셀 변환
+          const priceToY = (price: number) =>
+            chartBounds.top + ((maxY - price) / domainHeight) * chartHeight;
+
+          return (
+            <>
+              <Area
+                points={points.close}
+                y0={chartBounds.bottom}
+                color="rgba(91,155,213,0.08)"
+                animate={{ type: 'timing', duration: 300 }}
+              />
+              <Line
+                points={points.close}
+                color="#5b9bd5"
+                strokeWidth={2.5}
+                animate={{ type: 'timing', duration: 300 }}
+              />
+              {/* 목표가 — 빨간 점선 */}
+              <SkiaLine
+                p1={{ x: chartBounds.left, y: priceToY(targetPrice) }}
+                p2={{ x: chartBounds.right, y: priceToY(targetPrice) }}
+                color="#FF1744"
+                strokeWidth={1.5}
+                style="stroke"
+              />
+              {/* 손절가 — 파란 점선 */}
+              <SkiaLine
+                p1={{ x: chartBounds.left, y: priceToY(stopLossPrice) }}
+                p2={{ x: chartBounds.right, y: priceToY(stopLossPrice) }}
+                color="#2979FF"
+                strokeWidth={1.5}
+                style="stroke"
+              />
+            </>
+          );
+        }}
       </CartesianChart>
     </View>
   );
