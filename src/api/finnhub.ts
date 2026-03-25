@@ -15,11 +15,11 @@ export async function fetchQuote(ticker: string): Promise<StockQuote> {
   // Finnhub 응답: { c: current, pc: prevClose, d: change, dp: changePercent, t: timestamp }
   return {
     ticker,
-    currentPrice: data.c,
-    previousClose: data.pc,
-    change: data.d,
-    changePercent: data.dp,
-    timestamp: data.t,
+    currentPrice: data.c ?? 0,
+    previousClose: data.pc ?? 0,
+    change: data.d ?? 0,
+    changePercent: data.dp ?? 0,
+    timestamp: data.t ?? Math.floor(Date.now() / 1000),
   };
 }
 
