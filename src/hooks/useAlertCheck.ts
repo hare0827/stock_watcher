@@ -4,6 +4,11 @@ import { useAlertStore } from '../stores/alertStore';
 import { getCardStatus } from '../utils/cardStyle';
 import { StockQuote, AlertEvent } from '../types';
 
+/**
+ * 알림 조건 감지 훅.
+ * @param quotes 호출부에서 useMemo로 참조를 안정화해야 함 — 매 렌더마다 새 배열이 전달되면 effect가 불필요하게 재실행됩니다.
+ * @param onAlert 알림 발생 시 콜백. 내부적으로 ref로 래핑되므로 useCallback 없이도 안전합니다.
+ */
 export function useAlertCheck(
   quotes: Array<{ name: string; quote: StockQuote | undefined }>,
   onAlert: (event: AlertEvent) => void
