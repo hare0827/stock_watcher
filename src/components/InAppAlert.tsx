@@ -11,6 +11,9 @@ interface Props {
 
 export function InAppAlert({ event, onDismiss }: Props) {
   const translateY = useRef(new Animated.Value(-100)).current;
+  // onDismiss ref: avoid stale closure in animation callback
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => { onDismissRef.current = onDismiss; });
 
   useEffect(() => {
     if (!event) return;
@@ -18,7 +21,7 @@ export function InAppAlert({ event, onDismiss }: Props) {
       Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
       Animated.delay(3000),
       Animated.timing(translateY, { toValue: -100, duration: 300, useNativeDriver: true }),
-    ]).start(() => onDismiss());
+    ]).start(() => onDismissRef.current());
   }, [event]);
 
   if (!event) return null;

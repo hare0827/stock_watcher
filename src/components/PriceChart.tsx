@@ -1,5 +1,5 @@
 // src/components/PriceChart.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Dimensions, StyleSheet } from 'react-native';
 import { CartesianChart, Line, Area } from 'victory-native';
 import { Line as SkiaLine } from '@shopify/react-native-skia';
@@ -15,13 +15,16 @@ interface Props {
 }
 
 export function PriceChart({ data, ticker, targetPrice, stopLossPrice }: Props) {
-  const chartData = data.map((d, i) => ({
-    day: i,
-    close: d.close,
-  }));
+  if (data.length === 0) return null;
 
-  const minY = Math.min(...data.map((d) => d.close), stopLossPrice) * 0.98;
-  const maxY = Math.max(...data.map((d) => d.close), targetPrice) * 1.02;
+  const chartData = useMemo(
+    () => data.map((d, i) => ({ day: i, close: d.close })),
+    [data]
+  );
+  const { minY, maxY } = useMemo(() => ({
+    minY: Math.min(...data.map((d) => d.close), stopLossPrice) * 0.98,
+    maxY: Math.max(...data.map((d) => d.close), targetPrice) * 1.02,
+  }), [data, stopLossPrice, targetPrice]);
 
   return (
     <View style={[styles.container, { width: width - 32, height: 300 }]}>

@@ -1,5 +1,5 @@
 // src/components/StockCard.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stock, StockQuote, AlertConfig } from '../types';
 import { getCardStatus, getCardColors } from '../utils/cardStyle';
@@ -14,10 +14,14 @@ interface Props {
 }
 
 export function StockCard({ stock, quote, alert, onPress }: Props) {
-  const status = quote && alert
-    ? getCardStatus(quote.currentPrice, alert.targetPrice, alert.stopLossPrice)
-    : 'normal';
-  const colors = getCardColors(status);
+  const status = useMemo(
+    () =>
+      quote && alert
+        ? getCardStatus(quote.currentPrice, alert.targetPrice, alert.stopLossPrice)
+        : 'normal',
+    [quote?.currentPrice, alert?.targetPrice, alert?.stopLossPrice]
+  );
+  const colors = useMemo(() => getCardColors(status), [status]);
 
   return (
     <TouchableOpacity
