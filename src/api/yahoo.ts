@@ -61,3 +61,34 @@ export async function fetchCandlesFromYahoo(
   }
   return candles;
 }
+
+// 현재 USD→KRW 환율 (실시간)
+export async function fetchCurrentExchangeRate(): Promise<number> {
+  const result = await fetchYahooChart('KRW=X', '5d');
+  const rate = result.meta.regularMarketPrice as number;
+  if (!rate) throw new Error('환율 데이터 없음');
+  return rate;
+}
+
+// 특정일 USD→KRW 환율 (과거)
+// 주말/공휴일이면 해당일 이전 가장 가까운 영업일 환율 반환
+export async function fetchHistoricalExchangeRate(date: string): Promise<number> {
+  const result = await fetchYahooChart('KRW=X', '2y');
+  const timestamps: number[] = result.timestamp ?? [];
+  const closes: number[] = result.indicators?.quote?.[0]?.close ?? [];
+
+  const targetMs = new Date(date).getTime() + 86400000; // 해당일 자정 + 하루 여유
+
+  let bestIdx = -1;
+  for (let i = 0; i < timestamps.length; i++) {
+    if (closes[i] == null) continue;
+    if (timestamps[i] * 1000 <= targetMs) {
+      bestIdx = i;
+    } else {
+      break;
+    }
+  }
+
+  if (bestIdx === -1) throw new Error(`환율 데이터 없음: ${date}`);
+  return closes[bestIdx];
+}
