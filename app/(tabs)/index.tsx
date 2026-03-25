@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, FlatList, StyleSheet, SafeAreaView,
-  TouchableOpacity, Text, RefreshControl
+  TouchableOpacity, Text, RefreshControl, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +20,19 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
   const router = useRouter();
   const { data: quote } = useStockPrice(stock.ticker);
   const { getAlert } = useAlertStore();
+  const { removeStock } = useStocksStore();
   const alert = getAlert(stock.ticker);
+
+  const handleLongPress = () => {
+    Alert.alert(
+      `${stock.name} 삭제`,
+      '이 종목을 목록에서 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '삭제', style: 'destructive', onPress: () => removeStock(stock.ticker) },
+      ]
+    );
+  };
 
   return (
     <StockCard
@@ -28,6 +40,7 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
       quote={quote}
       alert={alert}
       onPress={() => router.push(`/stock/${stock.ticker}?name=${stock.name}`)}
+      onLongPress={handleLongPress}
     />
   );
 }

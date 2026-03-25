@@ -11,9 +11,10 @@ interface Props {
   quote: StockQuote | undefined;
   alert: Omit<AlertConfig, 'ticker'> | undefined;
   onPress: () => void;
+  onLongPress?: () => void;
 }
 
-export function StockCard({ stock, quote, alert, onPress }: Props) {
+export function StockCard({ stock, quote, alert, onPress, onLongPress }: Props) {
   const status = useMemo(
     () =>
       quote && alert
@@ -27,6 +28,7 @@ export function StockCard({ stock, quote, alert, onPress }: Props) {
     <TouchableOpacity
       testID="stock-card"
       onPress={onPress}
+      onLongPress={onLongPress}
       style={[styles.card, { borderColor: colors.border, backgroundColor: colors.background }]}
       activeOpacity={0.85}
     >
