@@ -48,8 +48,11 @@ export const useStocksStore = create<StocksState>((set, get) => ({
     const next = get().stocks.filter((s) => s.ticker !== ticker);
     set({ stocks: next });
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 고아 레코드 정리
+    // AsyncStorage 고아 레코드 정리
     AsyncStorage.removeItem(`@alerts:${ticker}`);
     AsyncStorage.removeItem(`@alert_enabled:${ticker}`);
+    // alertStore in-memory 상태 정리 (순환 import 방지 위해 lazy require 사용)
+    const { removeAlert } = require('./alertStore').useAlertStore.getState();
+    removeAlert(ticker);
   },
 }));

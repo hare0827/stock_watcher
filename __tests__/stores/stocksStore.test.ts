@@ -70,3 +70,13 @@ it('종목 삭제', async () => {
   });
   expect(result.current.stocks.find((s) => s.ticker === 'NVDA')).toBeUndefined();
 });
+
+it('종목 삭제 시 알림 AsyncStorage 레코드 정리', async () => {
+  await AsyncStorage.setItem('@alerts:NVDA', JSON.stringify({ targetPrice: 200, stopLossPrice: 100, enabled: true }));
+  const { result } = renderHook(() => useStocksStore());
+  await act(async () => {
+    result.current.removeStock('NVDA');
+  });
+  const remaining = await AsyncStorage.getItem('@alerts:NVDA');
+  expect(remaining).toBeNull();
+});

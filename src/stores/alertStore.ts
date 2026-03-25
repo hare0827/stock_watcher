@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AlertConfig } from '../types';
 
-type AlertPayload = { targetPrice: number; stopLossPrice: number; enabled: boolean };
+type AlertPayload = Omit<AlertConfig, 'ticker'>;
 // Set 대신 Record 사용 — Zustand 직렬화 안전
 type AlertedFlags = Record<string, { target: boolean; stoploss: boolean }>;
 
