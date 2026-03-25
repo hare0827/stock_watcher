@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stock } from '../types';
 import { useAlertStore } from './alertStore';
+import { useHoldingsStore } from './holdingsStore';
 
 const STORAGE_KEY = '@stocks';
 const MAX_STOCKS = 20;
@@ -54,5 +55,7 @@ export const useStocksStore = create<StocksState>((set, get) => ({
     AsyncStorage.removeItem(`@alert_enabled:${ticker}`);
     // alertStore in-memory 상태 정리
     useAlertStore.getState().removeAlert(ticker);
+    // holdingsStore 정리
+    useHoldingsStore.getState().clearHoldings(ticker);
   },
 }));
