@@ -32,7 +32,7 @@ export default function AlertSettingsScreen() {
       setTargetPrice(String(Math.round(currentPrice * 1.1 / step) * step));
       setStopLossPrice(String(Math.round(currentPrice * 0.9 / step) * step));
     }
-  }, [currentPrice]);
+  }, [currentPrice, existing, step]);
 
   const handleSave = async () => {
     await setAlert(ticker, {
