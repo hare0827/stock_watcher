@@ -10,6 +10,9 @@ export function useAlertCheck(
 ) {
   const { getAlert, wasAlerted, markAlerted, clearAlerted } = useAlertStore();
   const prevStatusRef = useRef<Record<string, string>>({});
+  // onAlert ref: always call the latest version to avoid stale closure
+  const onAlertRef = useRef(onAlert);
+  useEffect(() => { onAlertRef.current = onAlert; });
 
   useEffect(() => {
     for (const { name, quote } of quotes) {
@@ -26,11 +29,11 @@ export function useAlertCheck(
 
       if (status === 'target' && !wasAlerted(quote.ticker, 'target')) {
         markAlerted(quote.ticker, 'target');
-        onAlert({ stock: { name, ticker: quote.ticker }, type: 'target', price: quote.currentPrice });
+        onAlertRef.current({ stock: { name, ticker: quote.ticker }, type: 'target', price: quote.currentPrice });
       } else if (status === 'stoploss' && !wasAlerted(quote.ticker, 'stoploss')) {
         markAlerted(quote.ticker, 'stoploss');
-        onAlert({ stock: { name, ticker: quote.ticker }, type: 'stoploss', price: quote.currentPrice });
+        onAlertRef.current({ stock: { name, ticker: quote.ticker }, type: 'stoploss', price: quote.currentPrice });
       }
     }
-  }, [quotes]);
+  }, [quotes, getAlert, wasAlerted, markAlerted, clearAlerted]);
 }
