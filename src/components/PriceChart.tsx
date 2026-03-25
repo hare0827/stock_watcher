@@ -15,16 +15,16 @@ interface Props {
 }
 
 export function PriceChart({ data, ticker, targetPrice, stopLossPrice }: Props) {
-  if (data.length === 0) return null;
-
   const chartData = useMemo(
     () => data.map((d, i) => ({ day: i, close: d.close })),
     [data]
   );
   const { minY, maxY } = useMemo(() => ({
-    minY: Math.min(...data.map((d) => d.close), stopLossPrice) * 0.98,
-    maxY: Math.max(...data.map((d) => d.close), targetPrice) * 1.02,
+    minY: data.length > 0 ? Math.min(...data.map((d) => d.close), stopLossPrice) * 0.98 : 0,
+    maxY: data.length > 0 ? Math.max(...data.map((d) => d.close), targetPrice) * 1.02 : 1,
   }), [data, stopLossPrice, targetPrice]);
+
+  if (data.length === 0) return null;
 
   return (
     <View style={[styles.container, { width: width - 32, height: 300 }]}>
