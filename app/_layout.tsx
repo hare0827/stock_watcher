@@ -4,12 +4,14 @@ import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useStocksStore } from '../src/stores/stocksStore';
 import { useAlertStore } from '../src/stores/alertStore';
+import { useHoldingsStore } from '../src/stores/holdingsStore';
 
 const queryClient = new QueryClient();
 
 function HydrationGate({ children }: { children: React.ReactNode }) {
   const { hydrate, hydrated } = useStocksStore();
   const { hydrateAlert } = useAlertStore();
+  const { hydrate: hydrateHoldings } = useHoldingsStore();
 
   useEffect(() => {
     hydrate().then(() => {
@@ -17,6 +19,7 @@ function HydrationGate({ children }: { children: React.ReactNode }) {
       const latestStocks = useStocksStore.getState().stocks;
       latestStocks.forEach((s) => hydrateAlert(s.ticker));
     });
+    hydrateHoldings();
   }, []);
 
   if (!hydrated) return null; // 로딩 스플래시
