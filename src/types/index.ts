@@ -39,3 +39,12 @@ export interface AlertEvent {
   type: 'target' | 'stoploss';
   price: number;
 }
+
+export interface Holding {
+  id: string;              // 고유 식별자 (Math.random 기반)
+  ticker: string;
+  shares: number;          // 양의 정수
+  pricePerShare: number;   // USD 종목은 USD, KRW 종목은 KRW
+  purchaseDate: string;    // 'YYYY-MM-DD'
+  currency: 'KRW' | 'USD';
+}
