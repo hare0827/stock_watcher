@@ -1,0 +1,102 @@
+<h2>포트폴리오 기능을 어디에 배치할까요?</h2>
+<p class="subtitle">현재 앱에는 홈 탭과 설정 탭이 있어요. 새 기능을 어디에 넣을지 골라주세요.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0e1117;">
+      <div class="mock-nav" style="background:#1c1f33; color:#c8caff; border:none; border-radius:0; margin:0; padding:8px 0; display:flex; justify-content:space-around; font-size:12px;">
+        <span>🏠 홈</span>
+        <span style="color:#5b9bd5; border-bottom:2px solid #5b9bd5; padding-bottom:4px;">📊 포트폴리오</span>
+        <span>⚙️ 설정</span>
+      </div>
+      <div style="background:#141720; border-radius:10px; margin:10px 0; padding:12px; border:1px solid #2d3150;">
+        <div style="color:#aaa; font-size:10px; margin-bottom:6px;">총 손익</div>
+        <div style="color:#00e676; font-size:18px; font-weight:800;">+₩1,234,500</div>
+        <div style="color:#555; font-size:10px;">+12.4%</div>
+      </div>
+      <div style="background:#141720; border-radius:8px; padding:10px; border:1px solid #222; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#c8caff; font-size:11px;">NVDA</span>
+          <span style="color:#00e676; font-size:11px;">+$340</span>
+        </div>
+      </div>
+      <div style="background:#141720; border-radius:8px; padding:10px; border:1px solid #222;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#c8caff; font-size:11px;">삼성전자</span>
+          <span style="color:#FF1744; font-size:11px;">-₩12,000</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 새 탭 추가</h3>
+      <p>하단 탭바에 "포트폴리오" 탭을 추가. 전용 화면에서 전체 포트폴리오 관리.</p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><ul><li>기능 분리 명확</li><li>항상 접근 가능</li></ul></div>
+        <div class="cons"><ul><li>탭이 3개로 늘어남</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0e1117;">
+      <div style="color:#777; font-size:10px; margin-bottom:6px;">← NVDA 상세 화면</div>
+      <div style="background:#141720; border-radius:10px; padding:12px; border:1px solid #2d3150; margin-bottom:8px;">
+        <div style="color:#fff; font-size:16px; font-weight:800;">$875.40</div>
+        <div style="color:#00e676; font-size:12px;">+2.3%</div>
+      </div>
+      <div style="background:#1c2a1c; border-radius:8px; padding:10px; border:1px solid #2a4a2a;">
+        <div style="color:#aaa; font-size:10px; margin-bottom:6px;">내 보유 현황</div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="color:#888; font-size:10px;">10주 × $650</span>
+          <span style="color:#00e676; font-size:10px;">+$2,254</span>
+        </div>
+        <div style="background:#0e1117; border-radius:6px; padding:8px; margin-top:6px; text-align:center;">
+          <span style="color:#5b9bd5; font-size:10px;">+ 매수 내역 추가</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 상세 화면에 통합</h3>
+      <p>각 종목 상세 화면 하단에 "내 보유 현황" 섹션 추가. 홈 화면에 총 손익 요약 배지 표시.</p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><ul><li>종목별 맥락에 자연스럽게</li><li>탭 구조 유지</li></ul></div>
+        <div class="cons"><ul><li>전체 포트폴리오 요약 보기 불편</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0e1117;">
+      <div style="color:#777; font-size:10px; margin-bottom:6px;">홈 화면 상단</div>
+      <div style="background:#141720; border-radius:10px; padding:12px; border:1px solid #2d3150; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="color:#aaa; font-size:10px;">총 포트폴리오 손익</div>
+          <div style="color:#00e676; font-size:16px; font-weight:800;">+$1,240</div>
+        </div>
+        <span style="color:#5b9bd5; font-size:11px;">자세히 ›</span>
+      </div>
+      <div style="background:#141720; border-radius:8px; padding:10px; border:1px solid #222; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#c8caff; font-size:11px;">NVDA</span>
+          <span style="color:#00e676; font-size:11px;">$875.40</span>
+        </div>
+      </div>
+      <div style="background:#141720; border-radius:8px; padding:10px; border:1px solid #222;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#c8caff; font-size:11px;">삼성전자</span>
+          <span style="color:#FF1744; font-size:11px;">₩73,400</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 홈 화면 상단 요약 카드</h3>
+      <p>홈 상단에 총 손익 요약 카드 추가. 탭하면 전체 포트폴리오 상세 모달 표시.</p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><ul><li>홈에서 바로 확인</li><li>탭 구조 유지</li></ul></div>
+        <div class="cons"><ul><li>홈 화면이 복잡해짐</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
