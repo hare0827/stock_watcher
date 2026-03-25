@@ -73,6 +73,9 @@ export async function fetchCurrentExchangeRate(): Promise<number> {
 // 특정일 USD→KRW 환율 (과거)
 // 주말/공휴일이면 해당일 이전 가장 가까운 영업일 환율 반환
 export async function fetchHistoricalExchangeRate(date: string): Promise<number> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`Invalid date format: ${date} (expected YYYY-MM-DD)`);
+  }
   const result = await fetchYahooChart('KRW=X', '2y');
   const timestamps: number[] = result.timestamp ?? [];
   const closes: number[] = result.indicators?.quote?.[0]?.close ?? [];
