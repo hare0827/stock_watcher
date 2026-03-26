@@ -23,7 +23,7 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
   const { removeStock } = useStocksStore();
   const alert = getAlert(stock.ticker);
 
-  const handleLongPress = () => {
+  const handleLongPress = useCallback(() => {
     Alert.alert(
       `${stock.name} 삭제`,
       '이 종목을 목록에서 삭제하시겠습니까?',
@@ -32,11 +32,15 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
         { text: '삭제', style: 'destructive', onPress: () => removeStock(stock.ticker) },
       ]
     );
-  };
+  }, [stock.name, stock.ticker, removeStock]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     router.push(`/edit-stock?ticker=${encodeURIComponent(stock.ticker)}`);
-  };
+  }, [stock.ticker, router]);
+
+  const handleDelete = useCallback(() => {
+    removeStock(stock.ticker);
+  }, [stock.ticker, removeStock]);
 
   return (
     <StockCard
@@ -46,7 +50,7 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
       onPress={() => router.push(`/stock/${stock.ticker}?name=${stock.name}`)}
       onLongPress={handleLongPress}
       onEdit={handleEdit}
-      onDelete={() => removeStock(stock.ticker)}
+      onDelete={handleDelete}
     />
   );
 }
