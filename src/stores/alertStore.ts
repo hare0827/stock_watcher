@@ -67,33 +67,38 @@ export const useAlertStore = create<AlertState>((set, get) => ({
   migrateAlert: async (oldTicker, newTicker) => {
     if (oldTicker === newTicker) return;
 
-    // AsyncStorage 키 이전
-    const [alertsRaw, enabledRaw] = await Promise.all([
-      AsyncStorage.getItem(`@alerts:${oldTicker}`),
-      AsyncStorage.getItem(`@alert_enabled:${oldTicker}`),
-    ]);
-    await Promise.all([
-      alertsRaw
-        ? AsyncStorage.setItem(`@alerts:${newTicker}`, alertsRaw)
-        : Promise.resolve(),
-      enabledRaw
-        ? AsyncStorage.setItem(`@alert_enabled:${newTicker}`, enabledRaw)
-        : Promise.resolve(),
-      AsyncStorage.removeItem(`@alerts:${oldTicker}`),
-      AsyncStorage.removeItem(`@alert_enabled:${oldTicker}`),
-    ]);
+    try {
+      // AsyncStorage 키 이전 (write 먼저, delete 나중)
+      const [alertsRaw, enabledRaw] = await Promise.all([
+        AsyncStorage.getItem(`@alerts:${oldTicker}`),
+        AsyncStorage.getItem(`@alert_enabled:${oldTicker}`),
+      ]);
+      await Promise.all([
+        alertsRaw
+          ? AsyncStorage.setItem(`@alerts:${newTicker}`, alertsRaw)
+          : Promise.resolve(),
+        enabledRaw
+          ? AsyncStorage.setItem(`@alert_enabled:${newTicker}`, enabledRaw)
+          : Promise.resolve(),
+      ]);
+      await Promise.all([
+        AsyncStorage.removeItem(`@alerts:${oldTicker}`),
+        AsyncStorage.removeItem(`@alert_enabled:${oldTicker}`),
+      ]);
+    } catch { /* AsyncStorage 실패 시 무시 */ }
 
-    // in-memory 상태 이전
+    // in-memory 상태 이전 (alerts와 alerted 독립적으로 처리)
     const { alerts, alerted } = get();
     const payload = alerts[oldTicker];
-    if (!payload) return;
-
     const { [oldTicker]: _a, ...restAlerts } = alerts;
-    const { [oldTicker]: _al, ...restAlerted } = alerted;
+    const { [oldTicker]: oldAlerted, ...restAlerted } = alerted;
+
     set({
-      alerts: { ...restAlerts, [newTicker]: payload },
-      alerted: alerted[oldTicker]
-        ? { ...restAlerted, [newTicker]: alerted[oldTicker] }
+      alerts: payload
+        ? { ...restAlerts, [newTicker]: payload }
+        : restAlerts,
+      alerted: oldAlerted
+        ? { ...restAlerted, [newTicker]: oldAlerted }
         : restAlerted,
     });
   },
