@@ -17,18 +17,27 @@ export default function AddStockScreen() {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tickerValid, setTickerValid] = useState<boolean | null>(null);
 
   const handleTickerBlur = async () => {
     const t = ticker.trim().toUpperCase();
     if (!t) return;
     setLoading(true);
     setError(null);
+    setTickerValid(null);
     try {
       const quote = await fetchQuote(t);
       setPreview(formatCurrency(quote.currentPrice, t));
+      setTickerValid(true);
     } catch {
-      setError('티커를 찾을 수 없습니다. 정확히 입력해 주세요.');
+      const isKoreanPattern = /^\d{6}$/.test(t);
+      setError(
+        isKoreanPattern
+          ? `한국 주식은 ".KS"(코스피) 또는 ".KQ"(코스닥)를 붙여주세요. 예: ${t}.KS`
+          : '티커를 찾을 수 없습니다. 정확히 입력해 주세요.'
+      );
       setPreview(null);
+      setTickerValid(false);
     } finally {
       setLoading(false);
     }
@@ -72,7 +81,7 @@ export default function AddStockScreen() {
         <TextInput
           style={styles.input}
           value={ticker}
-          onChangeText={(v) => setTicker(v.toUpperCase())}
+          onChangeText={(v) => { setTicker(v.toUpperCase()); setError(null); setPreview(null); setTickerValid(null); }}
           onBlur={handleTickerBlur}
           placeholder="예: AAPL  또는  005380.KS"
           placeholderTextColor="#555"
@@ -84,9 +93,9 @@ export default function AddStockScreen() {
         {error && <Text style={styles.errorText}>{error}</Text>}
 
         <TouchableOpacity
-          style={[styles.button, (maxReached || !name || !ticker) && styles.buttonDisabled]}
+          style={[styles.button, (maxReached || !name || !ticker || tickerValid === false) && styles.buttonDisabled]}
           onPress={handleAdd}
-          disabled={maxReached || !name || !ticker}
+          disabled={maxReached || !name || !ticker || tickerValid === false}
         >
           <Text style={styles.buttonText}>추가</Text>
         </TouchableOpacity>

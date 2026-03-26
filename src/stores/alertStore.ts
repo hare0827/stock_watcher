@@ -16,6 +16,7 @@ interface AlertState {
   markAlerted: (ticker: string, type: 'target' | 'stoploss') => void;
   wasAlerted: (ticker: string, type: 'target' | 'stoploss') => boolean;
   clearAlerted: (ticker: string) => void;
+  migrateAlert: (oldTicker: string, newTicker: string) => Promise<void>;
 }
 
 export const useAlertStore = create<AlertState>((set, get) => ({
@@ -61,5 +62,39 @@ export const useAlertStore = create<AlertState>((set, get) => ({
     set((s) => ({
       alerted: { ...s.alerted, [ticker]: { target: false, stoploss: false } },
     }));
+  },
+
+  migrateAlert: async (oldTicker, newTicker) => {
+    if (oldTicker === newTicker) return;
+
+    // AsyncStorage 키 이전
+    const [alertsRaw, enabledRaw] = await Promise.all([
+      AsyncStorage.getItem(`@alerts:${oldTicker}`),
+      AsyncStorage.getItem(`@alert_enabled:${oldTicker}`),
+    ]);
+    await Promise.all([
+      alertsRaw
+        ? AsyncStorage.setItem(`@alerts:${newTicker}`, alertsRaw)
+        : Promise.resolve(),
+      enabledRaw
+        ? AsyncStorage.setItem(`@alert_enabled:${newTicker}`, enabledRaw)
+        : Promise.resolve(),
+      AsyncStorage.removeItem(`@alerts:${oldTicker}`),
+      AsyncStorage.removeItem(`@alert_enabled:${oldTicker}`),
+    ]);
+
+    // in-memory 상태 이전
+    const { alerts, alerted } = get();
+    const payload = alerts[oldTicker];
+    if (!payload) return;
+
+    const { [oldTicker]: _a, ...restAlerts } = alerts;
+    const { [oldTicker]: _al, ...restAlerted } = alerted;
+    set({
+      alerts: { ...restAlerts, [newTicker]: payload },
+      alerted: alerted[oldTicker]
+        ? { ...restAlerted, [newTicker]: alerted[oldTicker] }
+        : restAlerted,
+    });
   },
 }));
