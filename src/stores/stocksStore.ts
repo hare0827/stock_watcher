@@ -20,7 +20,7 @@ interface StocksState {
   hydrate: () => Promise<void>;
   addStock: (stock: Stock) => void;
   removeStock: (ticker: string) => void;
-  editStock: (oldTicker: string, updated: Stock) => void;
+  editStock: (oldTicker: string, updated: Stock) => Promise<void>;
 }
 
 export const useStocksStore = create<StocksState>((set, get) => ({
@@ -60,10 +60,13 @@ export const useStocksStore = create<StocksState>((set, get) => ({
     useHoldingsStore.getState().clearHoldings(ticker);
   },
 
-  editStock: (oldTicker, updated) => {
+  editStock: async (oldTicker, updated) => {
     const { stocks } = get();
-    const others = stocks.filter((s) => s.ticker !== oldTicker);
 
+    if (!stocks.some((s) => s.ticker === oldTicker))
+      throw new Error('수정할 종목을 찾을 수 없습니다.');
+
+    const others = stocks.filter((s) => s.ticker !== oldTicker);
     if (others.some((s) => s.ticker === updated.ticker))
       throw new Error('이미 등록된 티커입니다.');
     if (others.some((s) => s.name === updated.name))
@@ -71,11 +74,11 @@ export const useStocksStore = create<StocksState>((set, get) => ({
 
     const next = stocks.map((s) => (s.ticker === oldTicker ? updated : s));
     set({ stocks: next });
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 
     if (oldTicker !== updated.ticker) {
-      useAlertStore.getState().migrateAlert(oldTicker, updated.ticker);
-      useHoldingsStore.getState().migrateHoldings(oldTicker, updated.ticker);
+      await useAlertStore.getState().migrateAlert(oldTicker, updated.ticker);
+      await useHoldingsStore.getState().migrateHoldings(oldTicker, updated.ticker);
     }
   },
 }));
