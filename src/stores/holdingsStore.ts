@@ -12,6 +12,7 @@ interface HoldingsState {
   removeHolding: (ticker: string, id: string) => void;
   clearHoldings: (ticker: string) => void;
   getHoldings: (ticker: string) => Holding[];
+  migrateHoldings: (oldTicker: string, newTicker: string) => void;
 }
 
 export const useHoldingsStore = create<HoldingsState>((set, get) => ({
@@ -53,4 +54,19 @@ export const useHoldingsStore = create<HoldingsState>((set, get) => ({
   },
 
   getHoldings: (ticker) => get().holdings[ticker] ?? [],
+
+  migrateHoldings: (oldTicker, newTicker) => {
+    if (oldTicker === newTicker) return;
+    const { holdings } = get();
+    const existing = holdings[oldTicker];
+    if (!existing) return;
+
+    const { [oldTicker]: _, ...rest } = holdings;
+    const next = {
+      ...rest,
+      [newTicker]: existing.map((h) => ({ ...h, ticker: newTicker })),
+    };
+    set({ holdings: next });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  },
 }));
