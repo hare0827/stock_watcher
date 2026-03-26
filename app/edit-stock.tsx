@@ -16,12 +16,26 @@ export default function EditStockScreen() {
 
   const original = stocks.find((s) => s.ticker === rawTicker);
 
+  if (!original) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.errorText}>종목을 찾을 수 없습니다.</Text>
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+            <Text style={styles.cancelText}>돌아가기</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const [name, setName] = useState(original?.name ?? '');
   const [ticker, setTicker] = useState(original?.ticker ?? '');
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tickerValid, setTickerValid] = useState<boolean | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleTickerBlur = async () => {
     const t = ticker.trim().toUpperCase();
@@ -58,16 +72,20 @@ export default function EditStockScreen() {
     const n = name.trim();
     const t = ticker.trim().toUpperCase();
     setError(null);
+    setIsSaving(true);
     try {
       await editStock(rawTicker!, { name: n, ticker: t });
       router.back();
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const isUnchanged = name.trim() === original?.name && ticker.trim().toUpperCase() === original?.ticker;
-  const isSaveDisabled = !name || !ticker || tickerValid === false || isUnchanged;
+  const tickerChanged = ticker.trim().toUpperCase() !== original.ticker;
+  const isSaveDisabled = !name || !ticker || tickerValid === false || isUnchanged || (tickerChanged && tickerValid !== true);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,9 +122,9 @@ export default function EditStockScreen() {
         {error && <Text style={styles.errorText}>{error}</Text>}
 
         <TouchableOpacity
-          style={[styles.button, isSaveDisabled && styles.buttonDisabled]}
+          style={[styles.button, (isSaveDisabled || isSaving) && styles.buttonDisabled]}
           onPress={handleSave}
-          disabled={isSaveDisabled}
+          disabled={isSaveDisabled || isSaving}
         >
           <Text style={styles.buttonText}>저장</Text>
         </TouchableOpacity>
