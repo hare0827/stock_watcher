@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Switch, TouchableOpacity,
-  StyleSheet, SafeAreaView, ScrollView
+  StyleSheet, ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAlertStore } from '../src/stores/alertStore';
 import { useStockPrice } from '../src/hooks/useStockPrice';
