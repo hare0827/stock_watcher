@@ -20,6 +20,7 @@ interface StocksState {
   hydrate: () => Promise<void>;
   addStock: (stock: Stock) => void;
   removeStock: (ticker: string) => void;
+  editStock: (oldTicker: string, updated: Stock) => void;
 }
 
 export const useStocksStore = create<StocksState>((set, get) => ({
@@ -57,5 +58,24 @@ export const useStocksStore = create<StocksState>((set, get) => ({
     useAlertStore.getState().removeAlert(ticker);
     // holdingsStore 정리
     useHoldingsStore.getState().clearHoldings(ticker);
+  },
+
+  editStock: (oldTicker, updated) => {
+    const { stocks } = get();
+    const others = stocks.filter((s) => s.ticker !== oldTicker);
+
+    if (others.some((s) => s.ticker === updated.ticker))
+      throw new Error('이미 등록된 티커입니다.');
+    if (others.some((s) => s.name === updated.name))
+      throw new Error('이미 등록된 표시명입니다.');
+
+    const next = stocks.map((s) => (s.ticker === oldTicker ? updated : s));
+    set({ stocks: next });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
+    if (oldTicker !== updated.ticker) {
+      useAlertStore.getState().migrateAlert(oldTicker, updated.ticker);
+      useHoldingsStore.getState().migrateHoldings(oldTicker, updated.ticker);
+    }
   },
 }));
