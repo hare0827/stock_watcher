@@ -34,6 +34,10 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
     );
   };
 
+  const handleEdit = () => {
+    router.push(`/edit-stock?ticker=${encodeURIComponent(stock.ticker)}`);
+  };
+
   return (
     <StockCard
       stock={stock}
@@ -41,6 +45,8 @@ function StockCardWrapper({ stock }: { stock: Stock }) {
       alert={alert}
       onPress={() => router.push(`/stock/${stock.ticker}?name=${stock.name}`)}
       onLongPress={handleLongPress}
+      onEdit={handleEdit}
+      onDelete={() => removeStock(stock.ticker)}
     />
   );
 }
