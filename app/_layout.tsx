@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Font from 'expo-font';
+import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { useStocksStore } from '../src/stores/stocksStore';
 import { useAlertStore } from '../src/stores/alertStore';
@@ -29,9 +29,9 @@ function HydrationGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    Font.loadAsync(Ionicons.font);
-  }, []);
+  const [fontsLoaded] = useFonts(Ionicons.font);
+
+  if (!fontsLoaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
