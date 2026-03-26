@@ -62,6 +62,32 @@ export async function fetchCandlesFromYahoo(
   return candles;
 }
 
+// 특정일 종가 조회 (주식)
+// 주말/공휴일이면 해당일 이전 가장 가까운 영업일 종가 반환
+export async function fetchHistoricalStockPrice(ticker: string, date: string): Promise<number> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`Invalid date format: ${date} (expected YYYY-MM-DD)`);
+  }
+  const result = await fetchYahooChart(ticker, '5y');
+  const timestamps: number[] = result.timestamp ?? [];
+  const closes: number[] = result.indicators?.quote?.[0]?.close ?? [];
+
+  const targetMs = new Date(date).getTime() + 86400000;
+
+  let bestIdx = -1;
+  for (let i = 0; i < timestamps.length; i++) {
+    if (closes[i] == null) continue;
+    if (timestamps[i] * 1000 <= targetMs) {
+      bestIdx = i;
+    } else {
+      break;
+    }
+  }
+
+  if (bestIdx === -1) throw new Error(`가격 데이터 없음: ${date}`);
+  return closes[bestIdx];
+}
+
 // 현재 USD→KRW 환율 (실시간)
 export async function fetchCurrentExchangeRate(): Promise<number> {
   const result = await fetchYahooChart('KRW=X', '5d');

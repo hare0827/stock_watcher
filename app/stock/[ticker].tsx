@@ -1,5 +1,5 @@
 // app/stock/[ticker].tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, SafeAreaView, ActivityIndicator,
@@ -16,6 +16,7 @@ import { PriceChart } from '../../src/components/PriceChart';
 import { Badge } from '../../src/components/Badge';
 import { getCardStatus } from '../../src/utils/cardStyle';
 import { formatCurrency, formatChangeSign, isKoreanStock } from '../../src/utils/format';
+import { fetchHistoricalStockPrice } from '../../src/api/yahoo';
 import { Period, Holding } from '../../src/types';
 
 const PERIODS: Period[] = ['1M', '3M', '6M', '1Y'];
@@ -32,7 +33,9 @@ export default function StockDetailScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [inputDate, setInputDate] = useState('');
   const [inputShares, setInputShares] = useState('');
-  const [inputPrice, setInputPrice] = useState('');
+  const [fetchedPrice, setFetchedPrice] = useState<number | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   const { data: quote, isLoading: quoteLoading } = useStockPrice(ticker);
   const { data: candles, isLoading: candlesLoading } = useStockCandles(ticker, period);
@@ -51,9 +54,35 @@ export default function StockDetailScreen() {
   const targetPrice = alert?.targetPrice ?? (quote ? quote.currentPrice * 1.1 : 0);
   const stopLossPrice = alert?.stopLossPrice ?? (quote ? quote.currentPrice * 0.9 : 0);
 
+  const handleDateBlur = useCallback(async () => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(inputDate)) return;
+    const parsedDate = new Date(inputDate);
+    if (isNaN(parsedDate.getTime()) || parsedDate > new Date()) return;
+
+    setPriceLoading(true);
+    setPriceError(null);
+    setFetchedPrice(null);
+    try {
+      const price = await fetchHistoricalStockPrice(ticker, inputDate);
+      setFetchedPrice(price);
+    } catch {
+      setPriceError('가격 조회 실패');
+    } finally {
+      setPriceLoading(false);
+    }
+  }, [inputDate, ticker]);
+
+  const resetModal = () => {
+    setInputDate('');
+    setInputShares('');
+    setFetchedPrice(null);
+    setPriceError(null);
+    setPriceLoading(false);
+  };
+
   const handleAddHolding = () => {
     const shares = parseInt(inputShares, 10);
-    const price = parseFloat(inputPrice);
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
     if (!dateRegex.test(inputDate)) {
@@ -73,8 +102,8 @@ export default function StockDetailScreen() {
       Alert.alert('오류', '주수는 1 이상의 정수로 입력해주세요.');
       return;
     }
-    if (isNaN(price) || price <= 0) {
-      Alert.alert('오류', '매수가는 0보다 큰 숫자로 입력해주세요.');
+    if (fetchedPrice == null) {
+      Alert.alert('오류', '매수일 가격을 조회 중입니다. 잠시 후 다시 시도해주세요.');
       return;
     }
 
@@ -82,15 +111,13 @@ export default function StockDetailScreen() {
       id: generateId(),
       ticker,
       shares,
-      pricePerShare: price,
+      pricePerShare: fetchedPrice,
       purchaseDate: inputDate,
       currency: isKoreanStock(ticker) ? 'KRW' : 'USD',
     };
     addHolding(holding);
     setModalVisible(false);
-    setInputDate('');
-    setInputShares('');
-    setInputPrice('');
+    resetModal();
   };
 
   const handleRemoveHolding = (id: string, date: string) => {
@@ -233,10 +260,22 @@ export default function StockDetailScreen() {
               style={styles.input}
               value={inputDate}
               onChangeText={setInputDate}
+              onBlur={handleDateBlur}
               placeholder="예: 2024-03-15"
               placeholderTextColor="#555"
               keyboardType="numbers-and-punctuation"
             />
+            {priceLoading && (
+              <ActivityIndicator color="#5b9bd5" size="small" style={{ marginTop: 8 }} />
+            )}
+            {!priceLoading && fetchedPrice != null && (
+              <Text style={styles.fetchedPrice}>
+                📈 당일 종가: {priceSymbol}{fetchedPrice.toLocaleString()}
+              </Text>
+            )}
+            {!priceLoading && priceError != null && (
+              <Text style={styles.fetchedPriceError}>{priceError}</Text>
+            )}
 
             <Text style={styles.inputLabel}>주수</Text>
             <TextInput
@@ -248,26 +287,12 @@ export default function StockDetailScreen() {
               keyboardType="number-pad"
             />
 
-            <Text style={styles.inputLabel}>
-              매수가 ({currency === 'KRW' ? '원' : '달러'})
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={inputPrice}
-              onChangeText={setInputPrice}
-              placeholder={currency === 'KRW' ? '예: 73400' : '예: 650.00'}
-              placeholderTextColor="#555"
-              keyboardType="decimal-pad"
-            />
-
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalBtn, styles.modalBtnCancel]}
                 onPress={() => {
                   setModalVisible(false);
-                  setInputDate('');
-                  setInputShares('');
-                  setInputPrice('');
+                  resetModal();
                 }}
               >
                 <Text style={styles.modalBtnCancelText}>취소</Text>
@@ -336,4 +361,6 @@ const styles = StyleSheet.create({
   modalBtnCancelText: { color: '#888', fontWeight: '600' },
   modalBtnConfirm: { backgroundColor: '#5b9bd5' },
   modalBtnConfirmText: { color: '#ffffff', fontWeight: '700' },
+  fetchedPrice: { color: '#00e676', fontSize: 13, marginTop: 8 },
+  fetchedPriceError: { color: '#FF1744', fontSize: 13, marginTop: 8 },
 });
