@@ -5,6 +5,7 @@ import {
   StyleSheet, SafeAreaView, ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useStocksStore } from '../src/stores/stocksStore';
 import { fetchQuote } from '../src/api/finnhub';
 import { formatCurrency } from '../src/utils/format';
@@ -13,6 +14,7 @@ export default function EditStockScreen() {
   const router = useRouter();
   const { ticker: rawTicker } = useLocalSearchParams<{ ticker: string }>();
   const { stocks, editStock } = useStocksStore();
+  const queryClient = useQueryClient();
 
   const original = stocks.find((s) => s.ticker === rawTicker);
 
@@ -62,6 +64,9 @@ export default function EditStockScreen() {
     setIsSaving(true);
     try {
       await editStock(rawTicker!, { name: n, ticker: t });
+      if (t !== rawTicker) {
+        queryClient.removeQueries({ queryKey: ['quote', rawTicker] });
+      }
       router.back();
     } catch (e: any) {
       setError(e.message);

@@ -67,6 +67,6 @@ export const useHoldingsStore = create<HoldingsState>((set, get) => ({
       [newTicker]: existing.map((h) => ({ ...h, ticker: newTicker })),
     };
     set({ holdings: next });
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   },
 }));
