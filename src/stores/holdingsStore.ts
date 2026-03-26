@@ -12,7 +12,7 @@ interface HoldingsState {
   removeHolding: (ticker: string, id: string) => void;
   clearHoldings: (ticker: string) => void;
   getHoldings: (ticker: string) => Holding[];
-  migrateHoldings: (oldTicker: string, newTicker: string) => void;
+  migrateHoldings: (oldTicker: string, newTicker: string) => Promise<void>;
 }
 
 export const useHoldingsStore = create<HoldingsState>((set, get) => ({
@@ -55,7 +55,7 @@ export const useHoldingsStore = create<HoldingsState>((set, get) => ({
 
   getHoldings: (ticker) => get().holdings[ticker] ?? [],
 
-  migrateHoldings: (oldTicker, newTicker) => {
+  migrateHoldings: async (oldTicker, newTicker) => {
     if (oldTicker === newTicker) return;
     const { holdings } = get();
     const existing = holdings[oldTicker];
