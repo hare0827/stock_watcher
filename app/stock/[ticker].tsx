@@ -21,7 +21,7 @@ import { Period, Holding } from '../../src/types';
 const PERIODS: Period[] = ['1M', '3M', '6M', '1Y'];
 
 function generateId(): string {
-  return Math.random().toString(36).slice(2, 10);
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export default function StockDetailScreen() {
@@ -60,7 +60,12 @@ export default function StockDetailScreen() {
       Alert.alert('오류', '날짜를 YYYY-MM-DD 형식으로 입력해주세요.');
       return;
     }
-    if (new Date(inputDate) > new Date()) {
+    const parsedDate = new Date(inputDate);
+    if (isNaN(parsedDate.getTime())) {
+      Alert.alert('오류', '유효한 날짜를 입력해주세요.');
+      return;
+    }
+    if (parsedDate > new Date()) {
       Alert.alert('오류', '미래 날짜는 입력할 수 없습니다.');
       return;
     }
