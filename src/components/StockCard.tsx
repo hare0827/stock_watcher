@@ -1,6 +1,6 @@
 // src/components/StockCard.tsx
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActionSheetIOS } from 'react-native';
 import { Stock, StockQuote, AlertConfig } from '../types';
 import { getCardStatus, getCardColors } from '../utils/cardStyle';
 import { formatCurrency, formatChangeSign } from '../utils/format';
@@ -12,9 +12,10 @@ interface Props {
   alert: Omit<AlertConfig, 'ticker'> | undefined;
   onPress: () => void;
   onLongPress?: () => void;
+  onEdit?: () => void;
 }
 
-export function StockCard({ stock, quote, alert, onPress, onLongPress }: Props) {
+export function StockCard({ stock, quote, alert, onPress, onLongPress, onEdit }: Props) {
   const status = useMemo(
     () =>
       quote && alert
@@ -23,6 +24,20 @@ export function StockCard({ stock, quote, alert, onPress, onLongPress }: Props) 
     [quote?.currentPrice, alert?.targetPrice, alert?.stopLossPrice]
   );
   const colors = useMemo(() => getCardColors(status), [status]);
+
+  const handleMorePress = () => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ['취소', '편집', '삭제'],
+        cancelButtonIndex: 0,
+        destructiveButtonIndex: 2,
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 1) onEdit?.();
+        if (buttonIndex === 2) onLongPress?.();
+      }
+    );
+  };
 
   return (
     <TouchableOpacity
@@ -37,7 +52,12 @@ export function StockCard({ stock, quote, alert, onPress, onLongPress }: Props) 
           <Text style={styles.name}>{stock.name}</Text>
           <Text style={styles.ticker}>{stock.ticker}</Text>
         </View>
-        <Badge status={status} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Badge status={status} />
+          <TouchableOpacity onPress={handleMorePress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.moreBtn}>⋮</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {quote ? (
@@ -76,4 +96,5 @@ const styles = StyleSheet.create({
   change: { fontSize: 14, marginBottom: 8 },
   meta: { fontSize: 12, color: '#888', borderTopWidth: 1, borderTopColor: '#333', paddingTop: 8 },
   loading: { fontSize: 14, color: '#555' },
+  moreBtn: { color: '#666', fontSize: 20, lineHeight: 22 },
 });
