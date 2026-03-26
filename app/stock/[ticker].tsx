@@ -31,12 +31,21 @@ export default function StockDetailScreen() {
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('1M');
 
+  // 매수 모달 state
   const [modalVisible, setModalVisible] = useState(false);
   const [inputDate, setInputDate] = useState('');
   const [inputShares, setInputShares] = useState('');
   const [fetchedPrice, setFetchedPrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
+
+  // 매도 모달 state
+  const [sellModalVisible, setSellModalVisible] = useState(false);
+  const [sellInputDate, setSellInputDate] = useState('');
+  const [sellInputShares, setSellInputShares] = useState('');
+  const [sellFetchedPrice, setSellFetchedPrice] = useState<number | null>(null);
+  const [sellPriceLoading, setSellPriceLoading] = useState(false);
+  const [sellPriceError, setSellPriceError] = useState<string | null>(null);
 
   const { data: quote, isLoading: quoteLoading } = useStockPrice(ticker);
   const { data: candles, isLoading: candlesLoading } = useStockCandles(ticker, period);
@@ -45,6 +54,11 @@ export default function StockDetailScreen() {
 
   const alert = getAlert(ticker);
   const holdings = getHoldings(ticker);
+  const buyHoldings = holdings.filter((h) => (h.type ?? 'buy') === 'buy');
+  const sellHoldings = holdings.filter((h) => h.type === 'sell');
+  const netShares = buyHoldings.reduce((s, h) => s + h.shares, 0)
+                  - sellHoldings.reduce((s, h) => s + h.shares, 0);
+
   const { totalPnL, pnlPercent, perHolding, isLoading: pnlLoading, isError: pnlError } =
     useHoldingPnL(holdings, quote?.currentPrice ?? 0);
 
@@ -74,12 +88,39 @@ export default function StockDetailScreen() {
     }
   }, [inputDate, ticker]);
 
+  const handleSellDateBlur = useCallback(async () => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(sellInputDate)) return;
+    const parsedDate = new Date(sellInputDate);
+    if (isNaN(parsedDate.getTime()) || parsedDate > new Date()) return;
+
+    setSellPriceLoading(true);
+    setSellPriceError(null);
+    setSellFetchedPrice(null);
+    try {
+      const price = await fetchHistoricalStockPrice(ticker, sellInputDate);
+      setSellFetchedPrice(price);
+    } catch {
+      setSellPriceError('가격 조회 실패');
+    } finally {
+      setSellPriceLoading(false);
+    }
+  }, [sellInputDate, ticker]);
+
   const resetModal = () => {
     setInputDate('');
     setInputShares('');
     setFetchedPrice(null);
     setPriceError(null);
     setPriceLoading(false);
+  };
+
+  const resetSellModal = () => {
+    setSellInputDate('');
+    setSellInputShares('');
+    setSellFetchedPrice(null);
+    setSellPriceError(null);
+    setSellPriceLoading(false);
   };
 
   const handleAddHolding = () => {
@@ -115,16 +156,62 @@ export default function StockDetailScreen() {
       pricePerShare: fetchedPrice,
       purchaseDate: inputDate,
       currency: isKoreanStock(ticker) ? 'KRW' : 'USD',
+      type: 'buy',
     };
     addHolding(holding);
     setModalVisible(false);
     resetModal();
   };
 
-  const handleRemoveHolding = (id: string, date: string) => {
+  const handleAddSellHolding = () => {
+    const shares = parseInt(sellInputShares, 10);
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!dateRegex.test(sellInputDate)) {
+      Alert.alert('오류', '날짜를 YYYY-MM-DD 형식으로 입력해주세요.');
+      return;
+    }
+    const parsedDate = new Date(sellInputDate);
+    if (isNaN(parsedDate.getTime())) {
+      Alert.alert('오류', '유효한 날짜를 입력해주세요.');
+      return;
+    }
+    if (parsedDate > new Date()) {
+      Alert.alert('오류', '미래 날짜는 입력할 수 없습니다.');
+      return;
+    }
+    if (!Number.isInteger(shares) || shares < 1) {
+      Alert.alert('오류', '주수는 1 이상의 정수로 입력해주세요.');
+      return;
+    }
+    if (shares > netShares) {
+      Alert.alert('오류', `매도 수량(${shares}주)이 보유 수량(${netShares}주)을 초과합니다.`);
+      return;
+    }
+    if (sellFetchedPrice == null) {
+      Alert.alert('오류', '매도일 가격을 조회 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    const holding: Holding = {
+      id: generateId(),
+      ticker,
+      shares,
+      pricePerShare: sellFetchedPrice,
+      purchaseDate: sellInputDate,
+      currency: isKoreanStock(ticker) ? 'KRW' : 'USD',
+      type: 'sell',
+    };
+    addHolding(holding);
+    setSellModalVisible(false);
+    resetSellModal();
+  };
+
+  const handleRemoveHolding = (id: string, date: string, type: 'buy' | 'sell' = 'buy') => {
+    const label = type === 'sell' ? '매도' : '매수';
     Alert.alert(
-      '매수 내역 삭제',
-      `${date} 매수 내역을 삭제하시겠습니까?`,
+      `${label} 내역 삭제`,
+      `${date} ${label} 내역을 삭제하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
         { text: '삭제', style: 'destructive', onPress: () => removeHolding(ticker, id) },
@@ -201,8 +288,11 @@ export default function StockDetailScreen() {
 
           {holdings.length > 0 && (
             <View style={styles.pnlSummary}>
+              <Text style={styles.netShares}>
+                순 보유량: {netShares}주{netShares === 0 ? '  (전량 매도)' : ''}
+              </Text>
               {pnlLoading ? (
-                <ActivityIndicator color="#5b9bd5" size="small" />
+                <ActivityIndicator color="#5b9bd5" size="small" style={{ marginTop: 4 }} />
               ) : pnlError ? (
                 <Text style={styles.pnlError}>환율 조회 실패 — 손익 계산 불가</Text>
               ) : (
@@ -214,14 +304,18 @@ export default function StockDetailScreen() {
             </View>
           )}
 
-          {holdings.map((h) => {
+          {/* 매수 내역 */}
+          {buyHoldings.length > 0 && (
+            <Text style={styles.subSectionLabel}>매수 내역</Text>
+          )}
+          {buyHoldings.map((h) => {
             const pnlEntry = perHolding.find((p) => p.id === h.id);
             const pnl = pnlEntry?.pnl;
             return (
               <TouchableOpacity
                 key={h.id}
                 style={styles.holdingRow}
-                onLongPress={() => handleRemoveHolding(h.id, h.purchaseDate)}
+                onLongPress={() => handleRemoveHolding(h.id, h.purchaseDate, 'buy')}
                 activeOpacity={0.8}
               >
                 <View>
@@ -230,7 +324,7 @@ export default function StockDetailScreen() {
                     {h.shares}주 · {priceSymbol}{h.pricePerShare.toLocaleString()}
                   </Text>
                 </View>
-                {pnl != null && !pnlLoading && !pnlError ? (
+                {pnl != null && !pnlLoading && !pnlError && sellHoldings.length === 0 ? (
                   <Text style={[styles.holdingPnl, { color: pnl >= 0 ? '#00e676' : '#FF1744' }]}>
                     {pnl >= 0 ? '+' : ''}₩{Math.round(pnl).toLocaleString('ko-KR')}
                   </Text>
@@ -241,13 +335,50 @@ export default function StockDetailScreen() {
             );
           })}
 
-          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-            <Ionicons name="add-circle-outline" size={18} color="#5b9bd5" />
-            <Text style={styles.addButtonText}>매수 내역 추가</Text>
-          </TouchableOpacity>
+          {/* 매도 내역 */}
+          {sellHoldings.length > 0 && (
+            <>
+              <Text style={[styles.subSectionLabel, { marginTop: 12 }]}>매도 내역</Text>
+              {sellHoldings.map((h) => (
+                <TouchableOpacity
+                  key={h.id}
+                  style={styles.holdingRow}
+                  onLongPress={() => handleRemoveHolding(h.id, h.purchaseDate, 'sell')}
+                  activeOpacity={0.8}
+                >
+                  <View>
+                    <Text style={styles.holdingDate}>{h.purchaseDate}</Text>
+                    <Text style={styles.holdingMeta}>
+                      {h.shares}주 · {priceSymbol}{h.pricePerShare.toLocaleString()}
+                    </Text>
+                  </View>
+                  <Text style={styles.holdingPnlPlaceholder}>
+                    {currency === 'KRW'
+                      ? `₩${Math.round(h.shares * h.pricePerShare).toLocaleString('ko-KR')}`
+                      : `$${(h.shares * h.pricePerShare).toLocaleString()}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+
+          {/* 버튼 영역 */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+              <Ionicons name="add-circle-outline" size={18} color="#5b9bd5" />
+              <Text style={styles.addButtonText}>매수 내역 추가</Text>
+            </TouchableOpacity>
+            {netShares > 0 && (
+              <TouchableOpacity style={styles.addButton} onPress={() => setSellModalVisible(true)}>
+                <Ionicons name="remove-circle-outline" size={18} color="#FF1744" />
+                <Text style={[styles.addButtonText, { color: '#FF1744' }]}>매도 내역 추가</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </ScrollView>
 
+      {/* 매수 모달 */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -305,6 +436,68 @@ export default function StockDetailScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* 매도 모달 */}
+      <Modal visible={sellModalVisible} transparent animationType="slide">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>매도 내역 추가</Text>
+
+            <Text style={styles.inputLabel}>매도일 (YYYY-MM-DD)</Text>
+            <TextInput
+              style={styles.input}
+              value={sellInputDate}
+              onChangeText={setSellInputDate}
+              onBlur={handleSellDateBlur}
+              placeholder="예: 2024-06-20"
+              placeholderTextColor="#555"
+              keyboardType="numbers-and-punctuation"
+            />
+            {sellPriceLoading && (
+              <ActivityIndicator color="#5b9bd5" size="small" style={{ marginTop: 8 }} />
+            )}
+            {!sellPriceLoading && sellFetchedPrice != null && (
+              <Text style={styles.fetchedPrice}>
+                당일 종가: {priceSymbol}{sellFetchedPrice.toLocaleString()}
+              </Text>
+            )}
+            {!sellPriceLoading && sellPriceError != null && (
+              <Text style={styles.fetchedPriceError}>{sellPriceError}</Text>
+            )}
+
+            <Text style={styles.inputLabel}>주수 (보유: {netShares}주)</Text>
+            <TextInput
+              style={styles.input}
+              value={sellInputShares}
+              onChangeText={setSellInputShares}
+              placeholder="예: 3"
+              placeholderTextColor="#555"
+              keyboardType="number-pad"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => {
+                  setSellModalVisible(false);
+                  resetSellModal();
+                }}
+              >
+                <Text style={styles.modalBtnCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: '#FF1744' }]}
+                onPress={handleAddSellHolding}
+              >
+                <Text style={styles.modalBtnConfirmText}>매도 추가</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -329,8 +522,10 @@ const styles = StyleSheet.create({
   holdingsSection: { backgroundColor: '#1c1f33', borderRadius: 12, padding: 16, marginTop: 16 },
   holdingsTitle: { color: '#c8caff', fontWeight: '700', fontSize: 15, marginBottom: 12 },
   pnlSummary: { marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#2d3150' },
+  netShares: { color: '#888', fontSize: 13, marginBottom: 4 },
   pnlTotal: { fontSize: 16, fontWeight: '700' },
   pnlError: { color: '#FF1744', fontSize: 13 },
+  subSectionLabel: { color: '#555', fontSize: 11, fontWeight: '600', marginBottom: 6, letterSpacing: 0.5 },
   holdingRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2d3150',
@@ -339,9 +534,10 @@ const styles = StyleSheet.create({
   holdingMeta: { color: '#888', fontSize: 12, marginTop: 2 },
   holdingPnl: { fontSize: 13, fontWeight: '700' },
   holdingPnlPlaceholder: { color: '#555', fontSize: 13 },
+  actionButtons: { gap: 8, marginTop: 12 },
   addButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginTop: 12, paddingVertical: 10, borderRadius: 8,
+    paddingVertical: 10, borderRadius: 8,
     borderWidth: 1, borderColor: '#2d3150', borderStyle: 'dashed',
   },
   addButtonText: { color: '#5b9bd5', fontSize: 14, marginLeft: 6 },
