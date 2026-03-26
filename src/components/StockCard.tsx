@@ -13,9 +13,10 @@ interface Props {
   onPress: () => void;
   onLongPress?: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function StockCard({ stock, quote, alert, onPress, onLongPress, onEdit }: Props) {
+export function StockCard({ stock, quote, alert, onPress, onLongPress, onEdit, onDelete }: Props) {
   const status = useMemo(
     () =>
       quote && alert
@@ -34,7 +35,7 @@ export function StockCard({ stock, quote, alert, onPress, onLongPress, onEdit }:
       },
       (buttonIndex) => {
         if (buttonIndex === 1) onEdit?.();
-        if (buttonIndex === 2) onLongPress?.();
+        if (buttonIndex === 2) onDelete?.();
       }
     );
   };
@@ -52,7 +53,7 @@ export function StockCard({ stock, quote, alert, onPress, onLongPress, onEdit }:
           <Text style={styles.name}>{stock.name}</Text>
           <Text style={styles.ticker}>{stock.ticker}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={styles.headerRight}>
           <Badge status={status} />
           <TouchableOpacity onPress={handleMorePress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={styles.moreBtn}>⋮</Text>
@@ -97,4 +98,5 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, color: '#888', borderTopWidth: 1, borderTopColor: '#333', paddingTop: 8 },
   loading: { fontSize: 14, color: '#555' },
   moreBtn: { color: '#666', fontSize: 20, lineHeight: 22 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
