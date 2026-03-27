@@ -21,6 +21,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="portfolio"
+        options={{
+          title: '포트폴리오',
+          tabBarIcon: ({ color, size }) => <Ionicons name="pie-chart" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: '설정',
