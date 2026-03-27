@@ -1,11 +1,12 @@
+// src/hooks/useHoldingPnL.ts
 import { useQuery, useQueries } from '@tanstack/react-query';
 import { Holding } from '../types';
 import { fetchCurrentExchangeRate, fetchHistoricalExchangeRate } from '../api/yahoo';
 
 export interface HoldingPnLResult {
-  totalPnL: number;       // 원화 기준 총 손익
-  pnlPercent: number;     // 수익률 (%)
-  perHolding: { id: string; pnl: number }[]; // 매수건별 손익 (원화)
+  totalPnL: number;
+  pnlPercent: number;
+  perHolding: { id: string; pnl: number }[];
   isLoading: boolean;
   isError: boolean;
 }
@@ -18,9 +19,13 @@ export function useHoldingPnL(
     totalPnL: 0, pnlPercent: 0, perHolding: [], isLoading: false, isError: false,
   };
 
-  const usdHoldings = holdings.filter((h) => h.currency === 'USD');
-  const hasUsd = usdHoldings.length > 0;
-  const uniqueDates = [...new Set(usdHoldings.map((h) => h.purchaseDate))];
+  const buys = holdings.filter((h) => (h.type ?? 'buy') === 'buy');
+  const sells = holdings.filter((h) => h.type === 'sell');
+
+  // 매수+매도 모두에서 USD 거래일 날짜 수집
+  const usdTransactions = holdings.filter((h) => h.currency === 'USD');
+  const hasUsd = usdTransactions.length > 0;
+  const uniqueDates = [...new Set(usdTransactions.map((h) => h.purchaseDate))];
 
   const { data: fxNow, isLoading: fxNowLoading, isError: fxNowError } = useQuery({
     queryKey: ['fx', 'now'] as const,
@@ -38,6 +43,8 @@ export function useHoldingPnL(
     })),
   });
 
+  // Guard placed here (after hook calls) to comply with Rules of Hooks —
+  // hooks must not be called conditionally.
   if (holdings.length === 0) return empty;
 
   const isLoading = hasUsd && (fxNowLoading || historicalResults.some((r) => r.isLoading));
@@ -45,7 +52,8 @@ export function useHoldingPnL(
 
   if (isLoading || isError) return { ...empty, isLoading, isError };
 
-  // 날짜 → 환율 맵 구성
+  // uniqueDates and historicalResults share the same index order —
+  // do not reorder uniqueDates without updating historicalResults queries.
   const fxByDate: Record<string, number> = {};
   uniqueDates.forEach((date, i) => {
     const rate = historicalResults[i]?.data;
@@ -53,30 +61,53 @@ export function useHoldingPnL(
   });
 
   let totalCost = 0;
-  let totalValue = 0;
-  const perHolding: { id: string; pnl: number }[] = [];
+  let totalCurrentValue = 0;
+  let totalSellProceeds = 0;
 
-  for (const h of holdings) {
-    let cost: number;
-    let value: number;
-
+  for (const h of buys) {
     if (h.currency === 'KRW') {
-      cost = h.shares * h.pricePerShare;
-      value = h.shares * currentPrice;
+      totalCost += h.shares * h.pricePerShare;
+      totalCurrentValue += h.shares * currentPrice;
     } else {
-      const fxAtPurchase = fxByDate[h.purchaseDate];
-      if (fxAtPurchase == null || fxNow == null) continue;
-      cost = h.shares * h.pricePerShare * fxAtPurchase;
-      value = h.shares * currentPrice * fxNow;
+      const fxAtBuy = fxByDate[h.purchaseDate];
+      if (fxAtBuy == null || fxNow == null) continue;
+      totalCost += h.shares * h.pricePerShare * fxAtBuy;
+      totalCurrentValue += h.shares * currentPrice * fxNow;
     }
-
-    totalCost += cost;
-    totalValue += value;
-    perHolding.push({ id: h.id, pnl: value - cost });
   }
 
+  for (const h of sells) {
+    if (h.currency === 'KRW') {
+      totalCurrentValue -= h.shares * currentPrice;
+      totalSellProceeds += h.shares * h.pricePerShare;
+    } else {
+      const fxAtSell = fxByDate[h.purchaseDate];
+      if (fxAtSell == null || fxNow == null) continue;
+      totalCurrentValue -= h.shares * currentPrice * fxNow;
+      totalSellProceeds += h.shares * h.pricePerShare * fxAtSell;
+    }
+  }
+
+  const totalValue = totalCurrentValue + totalSellProceeds;
   const totalPnL = totalValue - totalCost;
   const pnlPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
+
+  // 매도 있으면 개별 row PnL 숨김 (avg cost 방식과 혼용 시 혼란 방지)
+  const perHolding: { id: string; pnl: number }[] = [];
+  if (sells.length === 0) {
+    for (const h of buys) {
+      if (h.currency === 'KRW') {
+        perHolding.push({ id: h.id, pnl: h.shares * (currentPrice - h.pricePerShare) });
+      } else {
+        const fxAtBuy = fxByDate[h.purchaseDate];
+        if (fxAtBuy == null || fxNow == null) continue;
+        perHolding.push({
+          id: h.id,
+          pnl: h.shares * currentPrice * fxNow - h.shares * h.pricePerShare * fxAtBuy,
+        });
+      }
+    }
+  }
 
   return { totalPnL, pnlPercent, perHolding, isLoading: false, isError: false };
 }

@@ -45,6 +45,7 @@ export interface Holding {
   ticker: string;
   shares: number;          // 양의 정수
   pricePerShare: number;   // USD 종목은 USD, KRW 종목은 KRW
-  purchaseDate: string;    // 'YYYY-MM-DD'
+  purchaseDate: string;    // 'YYYY-MM-DD' (매수일 또는 매도일)
   currency: 'KRW' | 'USD';
+  type: 'buy' | 'sell';   // 없으면 'buy'로 간주 (하위 호환)
 }
