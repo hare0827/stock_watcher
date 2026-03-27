@@ -26,7 +26,11 @@ export const useKisStore = create<KisState>((set, get) => ({
 
   hydrate: async () => {
     const url = await AsyncStorage.getItem(BACKEND_URL_KEY);
-    if (url) set({ backendUrl: url });
+    if (url) {
+      set({ backendUrl: url });
+      const ok = await apiTestConnection(url);
+      set({ isConnected: ok });
+    }
   },
 
   testConnection: async () => {
