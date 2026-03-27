@@ -7,10 +7,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 
 export default function SettingsScreen() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
 
@@ -75,6 +77,11 @@ export default function SettingsScreen() {
             본 앱은 투자 조언을 제공하지 않습니다. 모든 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
           </Text>
         </View>
+
+        {/* 아이콘 테스트 (개발용) */}
+        <TouchableOpacity style={[styles.btn, { marginTop: 32, backgroundColor: '#1c1f33', borderWidth: 1, borderColor: '#2d3150' }]} onPress={() => router.push('/icon-test')}>
+          <Text style={[styles.btnText, { color: '#888' }]}>🔧 아이콘 테스트</Text>
+        </TouchableOpacity>
 
         {/* 앱 버전 */}
         <Text style={styles.version}>
