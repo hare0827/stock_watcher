@@ -1,0 +1,55 @@
+import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { testConnection as apiTestConnection, fetchBalance } from '../api/kis';
+import { useHoldingsStore } from './holdingsStore';
+
+const BACKEND_URL_KEY = '@kis_backend_url';
+
+interface KisState {
+  backendUrl: string | null;
+  isConnected: boolean;
+  setBackendUrl: (url: string) => Promise<void>;
+  hydrate: () => Promise<void>;
+  testConnection: () => Promise<boolean>;
+  syncBalance: () => Promise<void>;
+  reset: () => void;
+}
+
+export const useKisStore = create<KisState>((set, get) => ({
+  backendUrl: null,
+  isConnected: false,
+
+  setBackendUrl: async (url) => {
+    set({ backendUrl: url });
+    await AsyncStorage.setItem(BACKEND_URL_KEY, url);
+  },
+
+  hydrate: async () => {
+    const url = await AsyncStorage.getItem(BACKEND_URL_KEY);
+    if (url) set({ backendUrl: url });
+  },
+
+  testConnection: async () => {
+    const { backendUrl } = get();
+    if (!backendUrl) return false;
+    const ok = await apiTestConnection(backendUrl);
+    set({ isConnected: ok });
+    return ok;
+  },
+
+  syncBalance: async () => {
+    const { backendUrl, isConnected } = get();
+    if (!backendUrl || !isConnected) return;
+    try {
+      const holdings = await fetchBalance(backendUrl);
+      const holdingsStore = useHoldingsStore.getState();
+      const existingTickers = Object.keys(useHoldingsStore.getState().holdings);
+      existingTickers.forEach((t) => holdingsStore.clearHoldings(t));
+      holdings.forEach((h) => holdingsStore.addHolding(h));
+    } catch {
+      // 동기화 실패 시 기존 내역 유지
+    }
+  },
+
+  reset: () => set({ backendUrl: null, isConnected: false }),
+}));
