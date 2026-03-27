@@ -15,6 +15,7 @@ import { useAlertCheck } from '../../src/hooks/useAlertCheck';
 import { StockCard } from '../../src/components/StockCard';
 import { InAppAlert } from '../../src/components/InAppAlert';
 import { OfflineBanner } from '../../src/components/OfflineBanner';
+import { PortfolioSummaryCard } from '../../src/components/PortfolioSummaryCard';
 import { AlertEvent, Stock } from '../../src/types';
 
 function StockCardWrapper({ stock }: { stock: Stock }) {
@@ -89,11 +90,13 @@ export default function HomeScreen() {
       <InAppAlert event={alertEvent} onDismiss={() => setAlertEvent(null)} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>📈 Stock Watcher</Text>
+        <Text style={styles.title}>Stock Watcher</Text>
         <TouchableOpacity onPress={onRefresh}>
           <Ionicons name="refresh" size={22} color="#c8caff" />
         </TouchableOpacity>
       </View>
+
+      <PortfolioSummaryCard />
 
       <FlatList
         data={stocks}
