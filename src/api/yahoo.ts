@@ -102,7 +102,7 @@ export async function fetchHistoricalExchangeRate(date: string): Promise<number>
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new Error(`Invalid date format: ${date} (expected YYYY-MM-DD)`);
   }
-  const result = await fetchYahooChart('KRW=X', '2y');
+  const result = await fetchYahooChart('KRW=X', '5y');
   const timestamps: number[] = result.timestamp ?? [];
   const closes: number[] = result.indicators?.quote?.[0]?.close ?? [];
 
