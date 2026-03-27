@@ -1,9 +1,11 @@
 // app/(tabs)/portfolio.tsx
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { useStocksStore } from '../../src/stores/stocksStore';
 import { useHoldingsStore } from '../../src/stores/holdingsStore';
+import { useKisStore } from '../../src/stores/kisStore';
 import { usePortfolioSummary } from '../../src/hooks/usePortfolioSummary';
 import { DonutChart } from '../../src/components/DonutChart';
 import { StockPnLRow } from '../../src/components/StockPnLRow';
@@ -12,6 +14,13 @@ export default function PortfolioScreen() {
   const { stocks } = useStocksStore();
   const { getHoldings } = useHoldingsStore();
   const summary = usePortfolioSummary();
+  const { syncBalance } = useKisStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      syncBalance();
+    }, [syncBalance])
+  );
 
   const holdingStocks = stocks.filter((s) => getHoldings(s.ticker).length > 0);
 

@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useStocksStore } from '../src/stores/stocksStore';
 import { useAlertStore } from '../src/stores/alertStore';
 import { useHoldingsStore } from '../src/stores/holdingsStore';
+import { useKisStore } from '../src/stores/kisStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,6 +18,7 @@ function HydrationGate({ children }: { children: React.ReactNode }) {
   const { hydrate, hydrated } = useStocksStore();
   const { hydrateAlert } = useAlertStore();
   const { hydrate: hydrateHoldings } = useHoldingsStore();
+  const { hydrate: hydrateKis, syncBalance } = useKisStore();
 
   useEffect(() => {
     hydrate().then(() => {
@@ -25,6 +27,7 @@ function HydrationGate({ children }: { children: React.ReactNode }) {
       latestStocks.forEach((s) => hydrateAlert(s.ticker));
     });
     hydrateHoldings();
+    hydrateKis().then(() => syncBalance());
   }, []);
 
   if (!hydrated) return null; // 로딩 스플래시
