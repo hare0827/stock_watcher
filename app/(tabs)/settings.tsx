@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useKisStore } from '../../src/stores/kisStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -16,11 +17,26 @@ export default function SettingsScreen() {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
 
+  const { backendUrl, isConnected, setBackendUrl, testConnection } = useKisStore();
+  const [kisUrl, setKisUrl] = useState('');
+  const [testing, setTesting] = useState(false);
+
   useEffect(() => {
     AsyncStorage.getItem('@finnhub_api_key').then((k) => {
       if (k) setApiKey(k);
     });
   }, []);
+
+  useEffect(() => {
+    if (backendUrl) setKisUrl(backendUrl);
+  }, [backendUrl]);
+
+  const handleTestConnection = async () => {
+    await setBackendUrl(kisUrl.trim());
+    setTesting(true);
+    await testConnection();
+    setTesting(false);
+  };
 
   const handleSaveKey = async () => {
     await AsyncStorage.setItem('@finnhub_api_key', apiKey.trim());
@@ -43,6 +59,33 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>설정</Text>
+
+        {/* KIS 모의투자 연동 */}
+        <Text style={[styles.sectionTitle, { marginTop: 32 }]}>KIS 모의투자 연동</Text>
+        <Text style={styles.sectionDesc}>
+          Railway에 배포한 백엔드 서버 URL을 입력하세요.{'\n'}
+          예: https://my-app.railway.app
+        </Text>
+        <View style={styles.connectionStatus}>
+          <View style={[styles.statusDot, { backgroundColor: isConnected ? '#00e676' : '#FF1744' }]} />
+          <Text style={styles.statusText}>{isConnected ? '연결됨' : '미연결'}</Text>
+        </View>
+        <TextInput
+          style={styles.input}
+          value={kisUrl}
+          onChangeText={setKisUrl}
+          placeholder="https://..."
+          placeholderTextColor="#555"
+          autoCapitalize="none"
+          keyboardType="url"
+        />
+        <TouchableOpacity
+          style={[styles.btn, testing && { opacity: 0.6 }]}
+          onPress={handleTestConnection}
+          disabled={testing}
+        >
+          <Text style={styles.btnText}>{testing ? '연결 테스트 중...' : '연결 테스트'}</Text>
+        </TouchableOpacity>
 
         {/* API Key */}
         <Text style={styles.sectionTitle}>Finnhub API Key</Text>
@@ -109,4 +152,7 @@ const styles = StyleSheet.create({
   disclaimerTitle: { color: '#888', fontSize: 13, fontWeight: '700', marginBottom: 8 },
   disclaimerText: { color: '#666', fontSize: 12, lineHeight: 18 },
   version: { color: '#444', fontSize: 12, textAlign: 'center', marginTop: 32 },
+  connectionStatus: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  statusText: { color: '#888', fontSize: 13 },
 });
