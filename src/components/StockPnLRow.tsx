@@ -17,12 +17,7 @@ export function StockPnLRow({ stock, color }: StockPnLRowProps) {
   const holdings = getHoldings(stock.ticker);
   const { data: quote } = useStockPrice(stock.ticker);
   const currentPrice = quote?.currentPrice ?? 0;
-  const { totalPnL, pnlPercent, isLoading } = useHoldingPnL(holdings, currentPrice);
-
-  const buys = holdings.filter((h) => (h.type ?? 'buy') === 'buy');
-  const sells = holdings.filter((h) => h.type === 'sell');
-  const netShares = buys.reduce((s, h) => s + h.shares, 0)
-                  - sells.reduce((s, h) => s + h.shares, 0);
+  const { totalPnL, pnlPercent, isLoading, netShares } = useHoldingPnL(holdings, currentPrice);
 
   const pnlColor = totalPnL >= 0 ? '#00e676' : '#FF1744';
   const sign = totalPnL >= 0 ? '+' : '-';

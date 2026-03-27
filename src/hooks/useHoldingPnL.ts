@@ -9,6 +9,7 @@ export interface HoldingPnLResult {
   perHolding: { id: string; pnl: number }[];
   isLoading: boolean;
   isError: boolean;
+  netShares: number;
 }
 
 export function useHoldingPnL(
@@ -16,7 +17,7 @@ export function useHoldingPnL(
   currentPrice: number
 ): HoldingPnLResult {
   const empty: HoldingPnLResult = {
-    totalPnL: 0, pnlPercent: 0, perHolding: [], isLoading: false, isError: false,
+    totalPnL: 0, pnlPercent: 0, perHolding: [], isLoading: false, isError: false, netShares: 0,
   };
 
   const buys = holdings.filter((h) => (h.type ?? 'buy') === 'buy');
@@ -109,5 +110,8 @@ export function useHoldingPnL(
     }
   }
 
-  return { totalPnL, pnlPercent, perHolding, isLoading: false, isError: false };
+  const netShares = buys.reduce((s, h) => s + h.shares, 0)
+                  - sells.reduce((s, h) => s + h.shares, 0);
+
+  return { totalPnL, pnlPercent, perHolding, isLoading: false, isError: false, netShares };
 }

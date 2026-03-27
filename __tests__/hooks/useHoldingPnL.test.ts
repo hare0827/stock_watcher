@@ -48,3 +48,12 @@ it('type 없는 기존 holding은 buy로 간주', () => {
   const { result } = renderHook(() => useHoldingPnL([holding], 300));
   expect(result.current.totalPnL).toBe(500); // 5 × (300 - 200)
 });
+
+it('netShares는 매수주수 합계 - 매도주수 합계', () => {
+  const holdings: Holding[] = [
+    makeBuy({ id: '1', shares: 10, pricePerShare: 100 }),
+    makeBuy({ id: '2', shares: 3, pricePerShare: 150, type: 'sell' }),
+  ];
+  const { result } = renderHook(() => useHoldingPnL(holdings, 160));
+  expect(result.current.netShares).toBe(7); // 10 - 3
+});

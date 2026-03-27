@@ -20,7 +20,7 @@ it('양수 손익은 초록색으로 표시', () => {
   (useHoldingsStore as jest.Mock).mockReturnValue({ getHoldings: () => [mockHolding] });
   (useStockPrice as jest.Mock).mockReturnValue({ data: { currentPrice: 150 } });
   (useHoldingPnL as jest.Mock).mockReturnValue({
-    totalPnL: 500, pnlPercent: 5.0, isLoading: false, isError: false, perHolding: [],
+    totalPnL: 500, pnlPercent: 5.0, isLoading: false, isError: false, perHolding: [], netShares: 10,
   });
 
   const { getByText } = render(<StockPnLRow stock={mockStock} color="#5b9bd5" />);
@@ -34,7 +34,7 @@ it('음수 손익은 빨간색으로 표시', () => {
   (useHoldingsStore as jest.Mock).mockReturnValue({ getHoldings: () => [mockHolding] });
   (useStockPrice as jest.Mock).mockReturnValue({ data: { currentPrice: 80 } });
   (useHoldingPnL as jest.Mock).mockReturnValue({
-    totalPnL: -200, pnlPercent: -2.0, isLoading: false, isError: false, perHolding: [],
+    totalPnL: -200, pnlPercent: -2.0, isLoading: false, isError: false, perHolding: [], netShares: 10,
   });
 
   const { getByText } = render(<StockPnLRow stock={mockStock} color="#5b9bd5" />);
@@ -48,7 +48,7 @@ it('로딩 중이면 — 표시', () => {
   (useHoldingsStore as jest.Mock).mockReturnValue({ getHoldings: () => [] });
   (useStockPrice as jest.Mock).mockReturnValue({ data: undefined });
   (useHoldingPnL as jest.Mock).mockReturnValue({
-    totalPnL: 0, pnlPercent: 0, isLoading: true, isError: false, perHolding: [],
+    totalPnL: 0, pnlPercent: 0, isLoading: true, isError: false, perHolding: [], netShares: 0,
   });
 
   const { getByText } = render(<StockPnLRow stock={mockStock} color="#5b9bd5" />);
