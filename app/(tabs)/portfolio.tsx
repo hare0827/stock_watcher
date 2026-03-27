@@ -77,16 +77,18 @@ export default function PortfolioScreen() {
         )}
 
         {/* 종목별 손익 리스트 */}
-        <View style={styles.listSection}>
-          <Text style={styles.listTitle}>종목별 손익</Text>
-          {holdingStocks.map((stock) => (
-            <StockPnLRow
-              key={stock.ticker}
-              stock={stock}
-              color={colorMap[stock.ticker] ?? '#5b9bd5'}
-            />
-          ))}
-        </View>
+        {!isLoading && !isError && (
+          <View style={styles.listSection}>
+            <Text style={styles.listTitle}>종목별 손익</Text>
+            {holdingStocks.map((stock) => (
+              <StockPnLRow
+                key={stock.ticker}
+                stock={stock}
+                color={colorMap[stock.ticker] ?? '#5b9bd5'}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
