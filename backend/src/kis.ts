@@ -10,6 +10,8 @@ interface TokenCache {
   expiresAt: number; // ms timestamp
 }
 
+const TOKEN_EXPIRY_BUFFER_MS = 10 * 60 * 1000; // 10 minutes
+
 let tokenCache: TokenCache | null = null;
 
 export function clearTokenCache(): void {
@@ -18,7 +20,7 @@ export function clearTokenCache(): void {
 
 export async function getToken(): Promise<string> {
   const now = Date.now();
-  if (tokenCache && tokenCache.expiresAt - 10 * 60 * 1000 > now) {
+  if (tokenCache && tokenCache.expiresAt - TOKEN_EXPIRY_BUFFER_MS > now) {
     return tokenCache.accessToken;
   }
 
@@ -35,6 +37,12 @@ export async function getToken(): Promise<string> {
   if (!res.ok) throw new Error(`KIS token error: ${res.status}`);
 
   const data = (await res.json()) as { access_token: string; expires_in: number };
+  if (!data.access_token || typeof data.access_token !== 'string') {
+    throw new Error('KIS token response missing access_token');
+  }
+  if (!data.expires_in || typeof data.expires_in !== 'number') {
+    throw new Error('KIS token response missing expires_in');
+  }
   tokenCache = {
     accessToken: data.access_token,
     expiresAt: now + data.expires_in * 1000,

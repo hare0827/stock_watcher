@@ -12,6 +12,7 @@ beforeEach(async () => {
   getToken = mod.getToken;
   clearTokenCache = mod.clearTokenCache;
   clearTokenCache();
+  mockFetch.mockClear();
 });
 
 function makeFetchResponse(body: object, ok = true) {
