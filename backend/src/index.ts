@@ -2,11 +2,13 @@ import 'dotenv/config';
 import express from 'express';
 import { authRouter } from './routes/auth';
 import { balanceRouter } from './routes/balance';
+import { orderRouter } from './routes/order';
 
 export const app = express();
 app.use(express.json());
 app.use('/auth', authRouter);
 app.use('/balance', balanceRouter);
+app.use('/order', orderRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
