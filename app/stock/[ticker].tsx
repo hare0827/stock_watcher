@@ -18,6 +18,8 @@ import { Badge } from '../../src/components/Badge';
 import { getCardStatus } from '../../src/utils/cardStyle';
 import { formatCurrency, formatChangeSign, isKoreanStock } from '../../src/utils/format';
 import { fetchHistoricalStockPrice } from '../../src/api/yahoo';
+import { KisOrderSection } from '../../src/components/KisOrderSection';
+import { useKisStore } from '../../src/stores/kisStore';
 import { Period, Holding } from '../../src/types';
 
 const PERIODS: Period[] = ['1M', '3M', '6M', '1Y'];
@@ -47,6 +49,7 @@ export default function StockDetailScreen() {
   const [sellPriceLoading, setSellPriceLoading] = useState(false);
   const [sellPriceError, setSellPriceError] = useState<string | null>(null);
 
+  const { isConnected } = useKisStore();
   const { data: quote, isLoading: quoteLoading } = useStockPrice(ticker);
   const { data: candles, isLoading: candlesLoading } = useStockCandles(ticker, period);
   const { getAlert } = useAlertStore();
@@ -362,20 +365,28 @@ export default function StockDetailScreen() {
             </>
           )}
 
-          {/* 버튼 영역 */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-              <Ionicons name="add-circle-outline" size={18} color="#5b9bd5" />
-              <Text style={styles.addButtonText}>매수 내역 추가</Text>
-            </TouchableOpacity>
-            {netShares > 0 && (
-              <TouchableOpacity style={styles.addButton} onPress={() => setSellModalVisible(true)}>
-                <Ionicons name="remove-circle-outline" size={18} color="#FF1744" />
-                <Text style={[styles.addButtonText, { color: '#FF1744' }]}>매도 내역 추가</Text>
+          {/* 버튼 영역 — KIS 미연결 시에만 표시 */}
+          {!isConnected && (
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+                <Ionicons name="add-circle-outline" size={18} color="#5b9bd5" />
+                <Text style={styles.addButtonText}>매수 내역 추가</Text>
               </TouchableOpacity>
-            )}
-          </View>
+              {netShares > 0 && (
+                <TouchableOpacity style={styles.addButton} onPress={() => setSellModalVisible(true)}>
+                  <Ionicons name="remove-circle-outline" size={18} color="#FF1744" />
+                  <Text style={[styles.addButtonText, { color: '#FF1744' }]}>매도 내역 추가</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
+
+        <KisOrderSection
+          ticker={ticker}
+          currentPrice={quote?.currentPrice ?? null}
+          netShares={netShares}
+        />
       </ScrollView>
 
       {/* 매수 모달 */}
