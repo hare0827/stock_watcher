@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { testConnection as apiTestConnection, fetchBalance } from '../api/kis';
+import { testConnection as apiTestConnection, fetchBalance, placeOrder as apiPlaceOrder } from '../api/kis';
 import { useHoldingsStore } from './holdingsStore';
 
 const BACKEND_URL_KEY = '@kis_backend_url';
@@ -12,6 +12,7 @@ interface KisState {
   hydrate: () => Promise<void>;
   testConnection: () => Promise<boolean>;
   syncBalance: () => Promise<void>;
+  placeOrder: (ticker: string, shares: number, orderType: 'buy' | 'sell') => Promise<string>;
   reset: () => void;
 }
 
@@ -53,6 +54,14 @@ export const useKisStore = create<KisState>((set, get) => ({
     } catch {
       // 동기화 실패 시 기존 내역 유지
     }
+  },
+
+  placeOrder: async (ticker, shares, orderType) => {
+    const { backendUrl, isConnected, syncBalance } = get();
+    if (!backendUrl || !isConnected) throw new Error('KIS 미연결');
+    const orderId = await apiPlaceOrder(backendUrl, ticker, shares, orderType);
+    await syncBalance();
+    return orderId;
   },
 
   reset: () => set({ backendUrl: null, isConnected: false }),
