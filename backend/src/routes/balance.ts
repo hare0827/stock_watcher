@@ -7,7 +7,7 @@ export const balanceRouter = Router();
 
 function parseAccount(): { cano: string; acntPrdtCd: string } {
   const raw = process.env.KIS_ACCOUNT_NO ?? '';
-  const [cano, acntPrdtCd] = raw.split('-');
+  const [cano, acntPrdtCd = '01'] = raw.split('-');
   return { cano, acntPrdtCd };
 }
 
