@@ -58,7 +58,7 @@ balanceRouter.get('/', async (_req, res) => {
       }>;
     };
 
-    if (data.rt_cd !== '0') throw new Error('KIS balance response error');
+    if (data.rt_cd !== '0') throw new Error(`KIS balance error: rt_cd=${data.rt_cd} msg=${(data as any).msg1 ?? ''}`);
 
     const today = new Date().toISOString().slice(0, 10);
 
