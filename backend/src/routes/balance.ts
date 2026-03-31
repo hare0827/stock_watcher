@@ -67,7 +67,6 @@ balanceRouter.get('/', async (_req, res) => {
       .map((item) => ({
         id: `kis_${item.pdno}.KS`,
         ticker: `${item.pdno}.KS`,
-        name: item.prdt_name,
         shares: parseInt(item.hldg_qty, 10),
         pricePerShare: parseFloat(item.pchs_avg_pric),
         purchaseDate: today,
