@@ -9,7 +9,7 @@ app.use('/auth', authRouter);
 app.use('/balance', balanceRouter);
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, v: 2 });
 });
 
 if (require.main === module) {
