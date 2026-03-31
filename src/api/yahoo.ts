@@ -21,6 +21,19 @@ async function fetchYahooChart(ticker: string, range: string): Promise<any> {
   return result;
 }
 
+export async function fetchStockName(ticker: string): Promise<string> {
+  try {
+    const result = await fetchYahooChart(ticker, '5d');
+    const { longName, shortName } = result.meta;
+    if (longName) return longName;
+    // shortName에 쉼표가 있으면 Yahoo Finance 내부 쓰레기 값 (예: "290740.KS,0P0001EDVG")
+    if (shortName && !shortName.includes(',') && shortName !== ticker) return shortName;
+    return ticker;
+  } catch {
+    return ticker;
+  }
+}
+
 export async function fetchQuoteFromYahoo(ticker: string): Promise<StockQuote> {
   const result = await fetchYahooChart(ticker, '5d');
   const meta = result.meta;
